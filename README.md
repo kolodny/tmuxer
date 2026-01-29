@@ -15,6 +15,10 @@ When LLM clients run commands, you usually need a few interactions to see the fu
 - **Interactive input** - Send keystrokes to running jobs (e.g., Ctrl+C to stop)
 - **Persistent** - Jobs survive across conversation turns; check on them anytime
 
+## Demo
+
+![Demo](./assets/muxer.gif)
+
 ## Installation
 
 ```bash
