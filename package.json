@@ -1,0 +1,57 @@
+{
+  "name": "tmuxer",
+  "version": "0.0.0",
+  "description": "An MCP server for managing jobs via tmux sessions",
+  "scripts": {
+    "prepublishOnly": "npm test",
+    "build": "rm -rf dist && tsc -b",
+    "postbuild": "npx tsx scripts/generate-schemas.ts && chmod +x dist/index.js",
+    "pretest": "npm run build",
+    "test": "node --import tsx --test",
+    "test:watch": "npm test -- --watch"
+  },
+  "files": [
+    "dist/"
+  ],
+  "main": "dist/index.js",
+  "bin": {
+    "tmuxer": "dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./*": {
+      "import": "./dist/*.js",
+      "require": "./dist/*.js",
+      "types": "./dist/*.d.ts"
+    }
+  },
+  "keywords": [],
+  "author": "Moshe Kolodny",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "mcp-compiler": "^0.2.4"
+  },
+  "types": "./dist/index.d.ts",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kolodny/tmuxer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kolodny/tmuxer/issues"
+  },
+  "homepage": "https://github.com/kolodny/tmuxer#readme"
+}
