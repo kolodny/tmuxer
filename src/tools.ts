@@ -68,7 +68,7 @@ export const createJob = async (opts: {
   const bash = esc(`bash -c ${esc(`echo; ${command}`)}`);
   await tmux(`new-window -d -e TMUX= -P ${getSession} -n ${esc(id)} ${bash}`);
 
-  // Select the new job in choose-tree view
+  // Select the new job and show in choose-tree selector
   await tmux(`select-window ${getSession}:${esc(id)}`);
   await tmux(`choose-tree ${getSession} -w`);
 
@@ -84,38 +84,23 @@ export const listJobs = async () => {
   }
 
   try {
-    const format = `"#{window_name}\t#{window_activity}\t#{pane_current_command}\t#{history_size}\t#{cursor_y}"`;
+    const format = `"#{window_name}\t#{window_activity}\t#{pane_current_command}\t#{history_size}\t#{cursor_y}\t#{pane_pid}\t#{pane_dead}\t#{pane_dead_status}"`;
     const { stdout } = await tmux(`list-windows ${getSession} -F ${format}`);
     const rows = stdout.trim().split('\n').filter(Boolean);
     const allWindows = rows.map((row) => {
-      const [jobId, activity, currentCommand, history, posY] = row.split('\t');
+      // prettier-ignore
+      const [jobId, activity, currentCommand, history, posY, pidRaw, dead, exitStatus] = row.split('\t');
       const lastActivityMs = Date.now() - +activity * 1000;
       const lines = parseInt(history, 10) + parseInt(posY, 10) + 1;
-      return { jobId, lastActivityMs, currentCommand, lines };
+      const pid = parseInt(pidRaw, 10);
+      const running = dead !== '1';
+      const base = { jobId, pid, running, currentCommand, lines };
+      const exitInfo = !running ? { exitCode: parseInt(exitStatus, 10) } : {};
+      return { ...base, lastActivityMs, ...exitInfo };
     });
     return allWindows.filter((job) => job.jobId !== WINDOW); // Hide the persistent main window
   } catch {
     return [];
-  }
-};
-
-/** Check if a job is still running */
-export const getJobStatus = async (opts: { jobId: string }) => {
-  const { jobId } = opts;
-  try {
-    const job = `${getSession}:${esc(jobId)}`;
-    const format = `-F "#{pane_pid}\t#{pane_dead}\t#{pane_dead_status}"`;
-    const { stdout } = await tmux(`list-panes ${job} ${format}`);
-    const [pid, dead, exitStatus] = stdout.trim().split('\t');
-    const isDead = dead === '1';
-    return {
-      jobId,
-      running: !isDead,
-      pid: parseInt(pid, 10),
-      ...(isDead && { exitCode: parseInt(exitStatus, 10) }),
-    };
-  } catch {
-    return { jobId, running: false, error: 'Job not found' };
   }
 };
 
@@ -125,20 +110,35 @@ export const getJobOutput = async (opts: {
   /** Only return the last N lines */
   lastLines?: number;
 }) => {
-  const { jobId, lastLines } = opts;
+  const { jobId, lastLines: last } = opts;
   const job = `${getSession}:${esc(jobId)}`;
+
+  const jobInfo = (await listJobs()).find((j) => j.jobId === jobId);
+  if (!jobInfo) throw new Error(`Job "${jobId}" not found`);
   const { stdout } = await tmux(`capture-pane ${job} -p -S -`);
-  if (lastLines && lastLines > 0) {
-    const lines = stdout.split('\n');
-    return { output: lines.slice(-lastLines).join('\n') };
-  }
-  return { output: stdout };
+  let output = stdout;
+  if (last && last > 0) output = stdout.split('\n').slice(-last).join('\n');
+
+  return { output, ...jobInfo };
 };
 
 /** Send input to a job (use C-c for Ctrl+C) */
-export const sendInput = async (opts: { jobId: string; input: string }) => {
-  const { jobId, input } = opts;
-  await tmux(`send-keys ${getSession}:${esc(jobId)} ${esc(input)}`);
+export const sendInput = async (opts: {
+  jobId: string;
+  input: string;
+  /** If true, input is sent as-is without escaping, for special keys like C-c */
+  noEscape?: boolean;
+}) => {
+  const { jobId, input, noEscape } = opts;
+
+  // Exit choose-tree or other modes if active (they intercept keys)
+  // copy-mode -q quits any active mode without sending keys to the pane
+  await tmux(`copy-mode -q ${getSession}:${esc(jobId)}`).catch(() => {});
+
+  const sending = noEscape ? input : `-l ${esc(input)}`;
+  await tmux(`send-keys ${getSession}:${esc(jobId)} ${sending}`);
+  await tmux(`choose-tree ${getSession} -w`); // Return to choose-tree (list) view
+
   return { success: true };
 };
 

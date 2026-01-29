@@ -38,14 +38,17 @@ describe('listJobs', () => {
   });
 });
 
-describe('getJobStatus', () => {
+describe('listJobs (status)', () => {
   test('returns running for active job', async () => {
     const name = `status-test-${Date.now()}`;
     await tools.createJob({ command: 'sleep 30', jobId: name });
     createdJobs.push(name);
 
-    const status = await tools.getJobStatus({ jobId: name });
-    assert.equal(status.running, true);
+    const jobs = await tools.listJobs();
+    const job = jobs.find((j) => j.jobId === name);
+    assert.ok(job, 'should find the job');
+    assert.equal(job.running, true);
+    assert.ok(job.pid, 'should have a pid');
   });
 
   test('returns exit code for completed job', async () => {
@@ -54,10 +57,13 @@ describe('getJobStatus', () => {
     createdJobs.push(name);
 
     // Wait for command to complete
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 200));
 
-    const status = await tools.getJobStatus({ jobId: name });
-    assert.equal(status.running, false);
+    const jobs = await tools.listJobs();
+    const job = jobs.find((j) => j.jobId === name);
+    assert.ok(job, 'should find the job');
+    assert.equal(job.running, false);
+    assert.equal(job.exitCode, 0);
   });
 });
 
@@ -68,7 +74,7 @@ describe('getJobOutput', () => {
     createdJobs.push(name);
 
     // Wait for output
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 200));
 
     const { output } = await tools.getJobOutput({ jobId: name });
     assert.ok(output.includes('hello world'), 'should capture echo output');
@@ -80,7 +86,7 @@ describe('getJobOutput', () => {
     await tools.createJob({ command, jobId: name });
     createdJobs.push(name);
 
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 200));
 
     const { output } = await tools.getJobOutput({ jobId: name, lastLines: 2 });
     const lines = output.trim().split('\n').filter(Boolean);
@@ -89,17 +95,48 @@ describe('getJobOutput', () => {
 });
 
 describe('sendInput', () => {
-  test('sends keystrokes to a job', async () => {
+  test('handles interactive prompts', async () => {
     const name = `input-test-${Date.now()}`;
-    await tools.createJob({ command: 'cat', jobId: name }); // cat waits for input
+    // Interactive bash script that prompts for name and responds
+    const script = `read -p "Enter name: " name && echo "Hello, $name!"`;
+    await tools.createJob({ command: script, jobId: name });
     createdJobs.push(name);
 
-    await new Promise((r) => setTimeout(r, 200));
-    await tools.sendInput({ jobId: name, input: '\rhello' });
+    // Send response to the prompt
+    await tools.sendInput({ jobId: name, input: 'Claude' });
+    await tools.sendInput({ jobId: name, input: 'Enter', noEscape: true });
+
     await new Promise((r) => setTimeout(r, 200));
 
     const { output } = await tools.getJobOutput({ jobId: name });
-    assert.ok(output.includes('hello'), 'should see the sent input');
+    assert.ok(output.includes('Enter name:'), 'should see the prompt');
+    assert.ok(output.includes('Hello, Claude!'), 'should see the response');
+  });
+
+  test('handles arrow keys in inquirer menu', async () => {
+    const name = `arrow-test-${Date.now()}`;
+    const script = `node -e "
+      const { select } = require('@inquirer/prompts');
+      const message = 'Select a fruit';
+      const choices = ['Apple', 'Banana', 'Cherry'];
+      select({ message, choices }).then(a => console.log('Selected: ' + a));
+    "`;
+    await tools.createJob({ command: script, jobId: name });
+    createdJobs.push(name);
+
+    await new Promise((r) => setTimeout(r, 300));
+
+    let { output, running } = await tools.getJobOutput({ jobId: name });
+    assert.ok(output.includes('Apple'), 'should see first option');
+
+    await tools.sendInput({ jobId: name, input: 'Down Down', noEscape: true });
+    ({ output, running } = await tools.getJobOutput({ jobId: name }));
+    assert.ok(output.includes('\u276F Cherry'));
+
+    await tools.sendInput({ jobId: name, input: 'Enter', noEscape: true });
+    ({ output, running } = await tools.getJobOutput({ jobId: name }));
+    assert.ok(output.includes('Selected: Cherry'));
+    assert.equal(running, false, 'script should have exited');
   });
 });
 

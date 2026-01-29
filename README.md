@@ -42,23 +42,21 @@ Add to your MCP configuration:
 
 ## MCP Tools
 
-| Tool           | Description                                                       |
-| -------------- | ----------------------------------------------------------------- |
-| `createJob`    | Start a command in a background tmux window                       |
-| `listJobs`     | List all active jobs                                              |
-| `getJobStatus` | Check if a job is running, get exit code if finished              |
-| `getJobOutput` | Get terminal output (supports `lastLines` for recent output only) |
-| `sendInput`    | Send keystrokes to a job (use `C-c` for Ctrl+C)                   |
-| `killJob`      | Terminate a job and destroy its window                            |
+| Tool           | Description                                                              |
+| -------------- | ------------------------------------------------------------------------ |
+| `createJob`    | Start a command in a background tmux window                              |
+| `listJobs`     | List all jobs with status (running, pid, exitCode)                       |
+| `getJobOutput` | Get terminal output (supports `lastLines` for recent output only)        |
+| `sendInput`    | Send keystrokes to a job (use `C-c` for Ctrl+C, `Enter` for enter, etc.) |
+| `killJob`      | Terminate a job and destroy its window                                   |
 
 ## Example workflow
 
 ```
 1. createJob({ command: "npm run dev", jobId: "dev-server" })
-2. getJobStatus({ jobId: "dev-server" })  // check if running
+2. listJobs()  // check status, pid, running state
 3. getJobOutput({ jobId: "dev-server", lastLines: 20 })  // see recent logs
-4. sendInput({ jobId: "dev-server", input: "C-c" })  // stop the server
-5. killJob({ jobId: "dev-server" })  // clean up
+4. killJob({ jobId: "dev-server" })  // clean up
 ```
 
 ## Spectating
@@ -80,7 +78,7 @@ New jobs are automatically highlighted when created. You can attach before or af
 
 ## Nested tmux support
 
-Commands that spawn their own tmux sessions (like `newt develop`) work seamlessly—tmuxer unsets the `TMUX` environment variable so nested sessions work correctly.
+Commands that spawn their own tmux sessions work seamlessly—tmuxer unsets the `TMUX` environment variable so nested sessions work correctly.
 
 ## Use cases
 

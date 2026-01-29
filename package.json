@@ -35,6 +35,7 @@
   "type": "commonjs",
   "devDependencies": {
     "@types/node": "^25.0.9",
+    "inquirer": "^13.2.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
