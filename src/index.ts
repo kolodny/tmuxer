@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
+import { existsSync } from 'node:fs';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { compile, generateSchemas } from 'mcp-compiler';
 import * as z from 'zod/v4';
 
-import { existsSync } from 'node:fs';
-import { compile, generateSchemas } from 'mcp-compiler';
 import * as tools from './tools';
 
 // Use pre-generated schemas in production, generate at runtime in dev
@@ -21,18 +21,18 @@ It allows LLMs to run long-running commands, monitor their output, and interact 
 
 ## Typical workflow:
 1. Use createJob to start a command (e.g., a build, server, or test suite)
-2. Use getJobStatus to check if it's still running
+2. Use listJobs to see active jobs and their status
 3. Use getJobOutput to view logs/output
 4. Use sendInput if the job needs interactive input (or to send Ctrl+C)
-5. Use killJob to terminate when done
+5. Use cleanupJobs when dead job windows accumulate (they're kept for auditing)
 
 ## Tips:
-- Jobs persist after the command exits (remain-on-exit), so you can always retrieve output
-- Use listJobs to see all active jobs
-- Custom job IDs make tracking easier (e.g., "build-frontend", "test-api")
+- Jobs persist after the command exits (remain-on-exit) for auditing, so you can always retrieve output
+- Use listJobs to see all active jobs and their status
+- Custom prefixes make tracking easier (e.g., "build", "test")
 `.trim();
 
-const server = new McpServer(
+export const server = new McpServer(
   { name: 'tmuxer', version: '1.0.0' },
   { capabilities: { tools: {} }, instructions },
 );
@@ -44,7 +44,7 @@ for (const { name, description } of compiled.tools) {
 }
 
 async function runServer() {
-  await tools.ensureSession();
+  await tools.hideFromTools.ensureSession();
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('MCP Server tmuxer running on stdio');

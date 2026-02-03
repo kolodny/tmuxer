@@ -1,6 +1,6 @@
 {
   "name": "tmuxer",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "An MCP server for managing jobs via tmux sessions",
   "scripts": {
     "prepublishOnly": "npm test",
@@ -35,6 +35,7 @@
   "type": "commonjs",
   "devDependencies": {
     "@types/node": "^25.0.9",
+    "commander": "^14.0.2",
     "inquirer": "^13.2.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
