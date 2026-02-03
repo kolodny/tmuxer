@@ -45,16 +45,18 @@ describe('createJob', () => {
 
   test('accepts environment variables', async () => {
     const { jobId } = await tools.createJob({
-      command: 'node -e "console.log(process.env.TEST_VAR)"',
+      command: 'TEST_VAR=hello_env node -e "console.log(process.env.TEST_VAR)"',
       prefix: 'env',
-      env: { TEST_VAR: 'hello_env' },
     });
 
     // Wait for output
     await new Promise((r) => setTimeout(r, 200));
 
     const { output } = await tools.getJobOutput({ jobId });
-    assert.ok(output.includes('hello_env'), 'should see the environment variable in output');
+    assert.ok(
+      output.includes('hello_env'),
+      'should see the environment variable in output',
+    );
   });
 });
 

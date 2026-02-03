@@ -13,7 +13,7 @@ When LLM clients run commands, you usually need a few interactions to see the fu
 - **Browse all jobs** - Window picker lets you flip between running processes
 - **Full terminal support** - Tools like `npm`, `docker`, and `htop` render correctly
 - **Interactive input** - Send keystrokes to running jobs (e.g., Ctrl+C to stop, or respond to prompts)
-- **Persistent** - Jobs survive across conversation turns; check on them anytime
+- **Auto-cleanup** - Jobs are killed when the process exits by default, or set `keepAlive` to persist beyond mcp lifetime
 
 ## Installation
 
@@ -40,7 +40,7 @@ Add to your MCP configuration:
 
 | Tool           | Description                                                                                               |
 | -------------- | --------------------------------------------------------------------------------------------------------- |
-| `createJob`    | Start a command in a background tmux window                                                               |
+| `createJob`    | Start a command in a background tmux window. Set `keepAlive: true` to persist after process exit          |
 | `listJobs`     | List all jobs with status (running, pid, exitCode)                                                        |
 | `getJobOutput` | Get terminal output (supports `lastLines` for recent output only)                                         |
 | `sendInput`    | Send keystrokes or text to a job (use `{C-c}` for Ctrl+C, `{Up}` for up arrow, `{Enter}` for enter, etc.) |
@@ -49,10 +49,20 @@ Add to your MCP configuration:
 ## Example workflow
 
 ```
-1. createJob({ command: "npm run dev", prefix: "dev" })  // returns jobId: "dev1"
-2. listJobs()  // check status, pid, running state
+1. createJob({ command: "npm run dev", prefix: "dev", keepAlive: true })  // returns jobId: "dev1"
+2. listJobs({})  // check status, pid, running state
 3. getJobOutput({ jobId: "dev1", lastLines: 20 })  // see recent logs
 4. sendInput({ jobId: "dev1", input: "{C-c}" })  // stop the server
+```
+
+## Programmatic usage
+
+You can run processes in the MCP session programmatically:
+
+```typescript
+import { createJob } from 'tmuxer';
+
+const { jobId } = await createJob({ command: 'npm run dev' });
 ```
 
 ## Spectating
@@ -60,7 +70,7 @@ Add to your MCP configuration:
 Run this in your terminal to attach to (or start) the tmuxer session:
 
 ```bash
-tmux new-session -A ';' choose-tree
+tmux attach ';' choose-tree
 ```
 
 You can use the up/down arrow keys to browse running jobs and see their live output in the preview pane. Press `Enter` to select a job and view it full screen.
@@ -92,7 +102,6 @@ It may be helpful to brush up on basic tmux commands if you're not familiar with
 ![demo](./assets/npm-create.gif)
 
 </details>
-
 
 ## Nested tmux support
 
