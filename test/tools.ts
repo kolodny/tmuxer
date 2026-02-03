@@ -1,7 +1,7 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execSync } from 'node:child_process';
-import * as tools from '../src/tools';
+import * as tools from '../src/';
 
 let session: string;
 before(async () => (session = await tools.hideFromTools.ensureSession()));
@@ -41,6 +41,20 @@ describe('createJob', () => {
     const num1 = parseInt(first.jobId.replace('multi', ''));
     const num2 = parseInt(second.jobId.replace('multi', ''));
     assert.equal(num2, num1 + 1, 'second job should be one higher');
+  });
+
+  test('accepts environment variables', async () => {
+    const { jobId } = await tools.createJob({
+      command: 'node -e "console.log(process.env.TEST_VAR)"',
+      prefix: 'env',
+      env: { TEST_VAR: 'hello_env' },
+    });
+
+    // Wait for output
+    await new Promise((r) => setTimeout(r, 200));
+
+    const { output } = await tools.getJobOutput({ jobId });
+    assert.ok(output.includes('hello_env'), 'should see the environment variable in output');
   });
 });
 

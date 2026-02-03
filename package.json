@@ -1,11 +1,11 @@
 {
   "name": "tmuxer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "An MCP server for managing jobs via tmux sessions",
   "scripts": {
     "prepublishOnly": "npm test",
     "build": "rm -rf dist && tsc -b",
-    "postbuild": "npx tsx scripts/generate-schemas.ts && chmod +x dist/index.js",
+    "postbuild": "npx tsx scripts/generate-schemas.ts && chmod +x dist/cli.js",
     "pretest": "npm run build",
     "test": "node --import tsx --test",
     "test:watch": "npm test -- --watch"
@@ -15,7 +15,7 @@
   ],
   "main": "dist/index.js",
   "bin": {
-    "tmuxer": "dist/index.js"
+    "tmuxer": "dist/cli.js"
   },
   "exports": {
     ".": {
