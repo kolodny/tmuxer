@@ -27,6 +27,7 @@ export const hideFromTools = { ensureSession };
 const canFail = (fn: Function) => { try { return fn(); } catch {} };
 const kill: number[] = [];
 process.on('exit', () => kill.forEach((p) => canFail(() => process.kill(-p))));
+process.on('SIGINT', () => process.exit()).on('SIGTERM', () => process.exit());
 
 /**
  * Create a new job that runs a command in a background tmux window
