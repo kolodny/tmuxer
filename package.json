@@ -1,6 +1,6 @@
 {
   "name": "tmuxer",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "An MCP server for managing jobs via tmux sessions",
   "scripts": {
     "prepublishOnly": "npm test",

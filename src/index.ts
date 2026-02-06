@@ -61,7 +61,7 @@ export const createJob = async (opts: {
     output = await tmux(`capture-pane -t ${target} -p`);
   }
 
-  return { jobId: id, pid, output };
+  return { jobId: id, pid, output, jobs: await listJobs({}) };
 };
 
 /** List all active jobs */
@@ -100,7 +100,7 @@ export const getJobOutput = async (opts: {
   let output = await tmux(`capture-pane -t ${job} -p -S -`);
   if (last && last > 0) output = output.split('\n').slice(-last).join('\n');
 
-  return { output, ...jobInfo };
+  return { output, ...jobInfo, jobs: await listJobs({}) };
 };
 
 /**
@@ -132,7 +132,7 @@ export const sendInput = async (opts: {
 
   await new Promise((r) => setTimeout(r, 1000));
   const output = await tmux(`capture-pane -t ${paneId} -p`);
-  return { output };
+  return { output, jobs: await listJobs({}) };
 };
 
 /** Clean up dead job windows */
@@ -145,5 +145,5 @@ export const cleanupJobs = async ({ jobIds }: { jobIds: string[] }) => {
     return jobId;
   });
   const cleaned = (await Promise.all(killPromises)).filter((id) => !!id);
-  return { cleaned };
+  return { cleaned, jobs: await listJobs({}) };
 };

@@ -36,6 +36,8 @@ Add to your MCP configuration:
 }
 ```
 
+Run `npx tmuxer --help` to see available CLI flags.
+
 ## MCP Tools
 
 | Tool           | Description                                                                                               |
@@ -67,7 +69,7 @@ const { jobId } = await createJob({ command: 'npm run dev' });
 
 ## Spectating
 
-Run this in your terminal to attach to (or start) the tmuxer session:
+Run this in your terminal to attach to the tmuxer session with a list of running jobs:
 
 ```bash
 tmux attach ';' choose-tree
@@ -77,6 +79,8 @@ You can use the up/down arrow keys to browse running jobs and see their live out
 
 - `Ctrl+b` then `d` disconnects from tmux
 - `Ctrl+b` then `w` Goes back to the picker view.
+
+If you see "no sessions", it means the MCP server hasn't connected yet.
 
 It may be helpful to brush up on basic tmux commands if you're not familiar with tmux.
 

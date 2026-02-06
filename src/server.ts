@@ -12,10 +12,12 @@ import pkg from '../package.json';
 const schemasPath = `${__dirname}/schemas.json`;
 const schemas = existsSync(schemasPath)
   ? require(schemasPath)
-  : generateSchemas(`${__dirname}/tools.ts`);
+  : generateSchemas(`${__dirname}/index.ts`);
 const compiled = compile({ tools, schemas, z });
 
-const instructions = `
+export const getServer = async () => {
+  const jobs = await tools.listJobs({});
+  const instructions = `
 tmuxer is an MCP server for managing background jobs via tmux sessions.
 It allows LLMs to run long-running commands, monitor their output, and interact with them.
 
@@ -28,17 +30,25 @@ It allows LLMs to run long-running commands, monitor their output, and interact 
 
 ## Tips:
 - Jobs persist after the command exits (remain-on-exit) for auditing, so you can always retrieve output
-- Use listJobs to see all active jobs and their status
+- Every tool response includes a "jobs" field with the current state of all jobs, so you always have an up-to-date view
 - Custom prefixes make tracking easier (e.g., "build", "test")
+
+Current jobs list:
+
+\`\`\`json
+${JSON.stringify(jobs, null, 2)}
+\`\`\`
 `.trim();
 
-export const server = new McpServer(
-  { name: pkg.name, version: pkg.version },
-  { capabilities: { tools: {} }, instructions },
-);
+  const server = new McpServer(
+    { name: pkg.name, version: pkg.version },
+    { capabilities: { tools: {} }, instructions },
+  );
 
-for (const { name, description } of compiled.tools) {
-  const zodSchemas = compiled.makeZodSchemas(name);
-  const fn = compiled.callTool.bind(null, name);
-  server.registerTool(name, { ...zodSchemas, description }, fn);
-}
+  for (const { name, description } of compiled.tools) {
+    const zodSchemas = compiled.makeZodSchemas(name);
+    const fn = compiled.callTool.bind(null, name);
+    server.registerTool(name, { ...zodSchemas, description }, fn);
+  }
+  return server;
+};
