@@ -30,7 +30,7 @@ Add to your MCP configuration:
   "mcpServers": {
     "tmuxer": {
       "command": "npx",
-      "args": ["-y", "tmuxer"]
+      "args": ["tmuxer@latest"]
     }
   }
 }
