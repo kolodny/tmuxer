@@ -1,6 +1,6 @@
 {
   "name": "tmuxer",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "An MCP server for managing jobs via tmux sessions",
   "scripts": {
     "prepublishOnly": "npm test",
@@ -42,7 +42,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.3",
     "commander": "^14.0.3",
-    "mcp-compiler": "^0.2.4"
+    "mcp-compiler": "^0.2.5"
   },
   "types": "./dist/index.d.ts",
   "directories": {
