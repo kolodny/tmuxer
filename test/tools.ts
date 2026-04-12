@@ -43,6 +43,15 @@ describe('createJob', () => {
     assert.equal(num2, num1 + 1, 'second job should be one higher');
   });
 
+  test('prefix matching ignores jobs with similar but non-exact prefixes', async () => {
+    // Create a job with prefix "dev-server" so "dev-server1" exists
+    await tools.createJob({ command: 'sleep 10', prefix: 'dev-server' });
+    // Now create a job with prefix "dev" — should not be confused by "dev-server1"
+    const result = await tools.createJob({ command: 'sleep 10', prefix: 'dev' });
+    assert.match(result.jobId, /^dev\d+$/, 'should be dev<N>, not devNaN');
+    assert.ok(!result.jobId.includes('NaN'), 'should not contain NaN');
+  });
+
   test('accepts environment variables', async () => {
     const { jobId } = await tools.createJob({
       command: 'TEST_VAR=hello_env node -e "console.log(process.env.TEST_VAR)"',

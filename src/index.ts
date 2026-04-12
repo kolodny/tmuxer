@@ -43,8 +43,9 @@ export const createJob = async (opts: {
   const { command, prefix = 'job', keepAlive = defaultKeepAlive } = opts;
   await ensureSession(sid, keepAlive);
   const jobs = (await listJobs({})).map(({ jobId }) => jobId);
-  const ids = jobs.map((j) => j.startsWith(prefix) && j.slice(prefix.length));
-  const maxId = ids.length ? Math.max(...ids.map(Number)) : 0;
+  const re = new RegExp(`^${prefix}(\\d+)$`);
+  const ids = jobs.map((j) => Number(j.replace(re, '$1')) || 0);
+  const maxId = Math.max(0, ...ids);
   const id = `${prefix}${maxId + 1}`;
   const run = esc(`echo && ${command}`); // prefix with echo to offset "dead pane" message
   await tmux(`new-window -d -e TMUX='' -P -t ${sid} -n ${esc(id)} ${run}`);
@@ -129,7 +130,6 @@ export const sendInput = async (opts: {
     const value = i % 2 ? parts[i] : `-l ${esc(parts[i])}`;
     await tmux(`send-keys -t ${paneId} ${value}`);
   }
-
   await new Promise((r) => setTimeout(r, 1000));
   const output = await tmux(`capture-pane -t ${paneId} -p`);
   return { output, jobs: await listJobs({}) };
